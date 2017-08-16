@@ -74,17 +74,24 @@ module.exports = {
   },
 
   work: (lane, manifest) => {
+    let github_user = process.env.GITHUB_USER;
+    let github_token = process.env.GITHUB_TOKEN;
+
     let commit_hash = manifest.prior_manifest.after;
-    let repo_url = manifest.prior_manifest.repository.url;
     let full_name = manifest.prior_manifest.repository.full_name;
     let shipment_date = manifest.shipment_start_date;
+    let repo_protocol = 'https://';
+    let auth = github_user ? `${github_user}:${github_token}@` : '';
+    let repo_url = `${repo_protocol}${auth}github.com/${full_name}`;
+
     let instance_hash = uuid.v4();
+
     let clone_command = `git clone ${repo_url} ${instance_hash}`;
     let checkout_command = `git checkout ${commit_hash}`;
     let check_tag_command = 'git describe --exact-match --tags HEAD';
     let repo_path = `${tmp}/${instance_hash}`;
     let remove_command = `rm -rf ${repo_path}`
-    let github_token = process.env.GITHUB_TOKEN;
+
     let content_type = 'application/json';
     let user_agent = 'GitHub Verify Branch Tag Service';
     let status_url =
