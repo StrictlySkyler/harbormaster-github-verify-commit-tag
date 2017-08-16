@@ -74,6 +74,8 @@ module.exports = {
   },
 
   work: (lane, manifest) => {
+    let results;
+
     let github_user = process.env.GITHUB_USER;
     let github_token = process.env.GITHUB_TOKEN;
 
@@ -85,6 +87,7 @@ module.exports = {
     let repo_url = `${repo_protocol}${auth}github.com/${full_name}`;
 
     let instance_hash = uuid.v4();
+    let exit_code = 1;
 
     let clone_command = `git clone ${repo_url} ${instance_hash}`;
     let checkout_command = `git checkout ${commit_hash}`;
@@ -124,19 +127,25 @@ module.exports = {
     exec(checkout_command, { cwd: repo_path });
 
     try {
-      exec(check_tag_command, { cwd: repo_path, encoding: 'utf8' });
+      results = exec(check_tag_command, { cwd: repo_path, encoding: 'utf8' });
       console.log('Tag found.  Sending success status.');
       options.data.state = success_state;
       options.data.description = success_description;
-    } catch (e) {
+      exit_code = 0;
+      manifest.data = results;
+    } catch (err) {
       console.log('No tag found.  Sending failure status.');
       options.data.state = failure_state;
       options.data.description = failure_description;
+      exit_code = 2;
+      manifest.error = err;
     }
 
     $H.HTTP.post(status_url, options);
 
     exec(remove_command);
+
+    $H.call('Lanes#end_shipment', lane, exit_code, manifest);
 
     return manifest;
   }
