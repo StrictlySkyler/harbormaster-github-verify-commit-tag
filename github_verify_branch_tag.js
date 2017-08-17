@@ -1,41 +1,39 @@
+/* eslint strict: ["error", "global"], import/no-unresolved: 0 */
+/* global $H */
+
 'use strict';
 
-let dependencies = ['uuid', 'expand-tilde'].join(' ');
-
-console.log('Installing dependencies:', dependencies, '...');
-require('child_process').execSync(
-  'npm i ' + dependencies
-);
-console.log('Dependencies installed:', dependencies);
-
-let fs = require('fs');
-let uuid = require('uuid');
-let expand_tilde = require('expand-tilde');
-let exec = require('child_process').execSync;
-
-let tmp = expand_tilde('~/.harbormaster/tmp');
-
-if (! fs.existsSync(tmp)) {
-  console.log('No temp directory found at:\n', tmp);
-  fs.mkdirSync(tmp);
-  console.log('Temp directory created:\n', tmp);
-}
-
-let Lanes;
-let Users;
-let Harbors;
-let Shipments;
 const NAME = 'github_verify_branch_tag';
+const dependencies = ['uuid', 'expand-tilde', 'debug'].join(' ');
+
+require('child_process').execSync(`npm i ${dependencies}`);
+
+const log = require('debug')(`${NAME}:log`);
+
+log('Dependencies installed:', dependencies);
+
+const fs = require('fs');
+const uuid = require('uuid');
+const expandTilde = require('expand-tilde');
+const exec = require('child_process').execSync;
+
+const tmp = expandTilde('~/.harbormaster/tmp');
+
+if (!fs.existsSync(tmp)) {
+  log('No temp directory found at:\n', tmp);
+  fs.mkdirSync(tmp);
+  log('Temp directory created:\n', tmp);
+}
 
 module.exports = {
 
-  render_input: (values) => {
+  render_input: function renderInput() {
     return `
       <p>This lane is triggered via RPC, and provides no manual configuration.</p>
-    `
+    `;
   },
 
-  render_work_preview: (manifest) => {
+  render_work_preview: function renderWorkPreview() {
     return `
       <p>This lane will do the following when called:</p>
       <ol>
@@ -45,109 +43,90 @@ module.exports = {
         <li>Post the results back to the corresponding hash in GitHub</li>
         <li>Remove the repo from the temporary location</li>
       </ol>
-    `
+    `;
   },
 
-  register: (lanes, users, harbors, shipments) => {
-    Lanes = lanes;
-    Users = users;
-    Harbors = harbors;
-    Shipments = shipments;
+  register: function register() { return NAME; },
 
-    return NAME;
-  },
-
-  update: (lane, values) => {
-    let harbor = Harbors.findOne(lane.type);
-
-    if (values.seconds) values.seconds = parseInt(values.seconds, 10);
-
-    harbor.lanes[lane._id] = {
-      manifest: values
-    };
-
-    Harbors.update(harbor._id, harbor);
-
-    if (typeof values.seconds == 'number') return true;
-
-    return false;
-  },
+  update: function update() { return false; },
 
   work: (lane, manifest) => {
     let results;
+    let exitCode = 1;
 
-    let github_user = process.env.GITHUB_USER;
-    let github_token = process.env.GITHUB_TOKEN;
+    const newManifest = manifest;
 
-    let commit_hash = manifest.prior_manifest.after;
-    let full_name = manifest.prior_manifest.repository.full_name;
-    let shipment_date = manifest.shipment_start_date;
-    let repo_protocol = 'https://';
-    let auth = github_user ? `${github_user}:${github_token}@` : '';
-    let repo_url = `${repo_protocol}${auth}github.com/${full_name}`;
+    const githubUser = process.env.GIThubUSER;
+    const githubToken = process.env.GIThubTOKEN;
 
-    let instance_hash = uuid.v4();
-    let exit_code = 1;
+    const commitHash = manifest.prior_manifest.after;
+    const fullName = manifest.prior_manifest.repository.fullName;
+    const shipmentDate = manifest.shipment_start_date;
+    const repoProtocol = 'https://';
+    const auth = githubUser ? `${githubUser}:${githubToken}@` : '';
+    const repoUrl = `${repoProtocol}${auth}github.com/${fullName}`;
 
-    let clone_command = `git clone ${repo_url} ${instance_hash}`;
-    let checkout_command = `git checkout ${commit_hash}`;
-    let check_tag_command = 'git describe --exact-match --tags HEAD';
-    let repo_path = `${tmp}/${instance_hash}`;
-    let remove_command = `rm -rf ${repo_path}`
+    const instanceHash = uuid.v4();
 
-    let content_type = 'application/json';
-    let user_agent = 'GitHub Verify Branch Tag Service';
-    let status_url =
-      `https://api.github.com/repos/${full_name}/statuses/${commit_hash}`;
-    let error_state = 'error';
-    let success_state = 'success';
-    let failure_state = 'failure';
-    let target_url =
-      `${process.env.ROOT_URL}/${lane.name}/ship/${shipment_date}`;
-    let error_description = 'There was an error checking the branch tag.';
-    let success_description = 'This branch has been tagged.';
-    let failure_description = 'Unable to find a tag for this branch!';
-    let context = 'continuous-integration/harbormaster';
+    const cloneCommand = `git clone ${repoUrl} ${instanceHash}`;
+    const checkoutCommand = `git checkout ${commitHash}`;
+    const checkTagCommand = 'git describe --exact-match --tags HEAD';
+    const repoPath = `${tmp}/${instanceHash}`;
+    const removeCommand = `rm -rf ${repoPath}`;
 
-    let options = {
+    const contentType = 'application/json';
+    const userAgent = 'GitHub Verify Branch Tag Service';
+    const statusUrl =
+      `https://api.github.com/repos/${fullName}/statuses/${commitHash}`;
+    const errorState = 'error';
+    const successState = 'success';
+    const failureState = 'failure';
+    const targetUrl =
+      `${process.env.ROOT_URL}/${lane.name}/ship/${shipmentDate}`;
+    const errorDescription = 'There was an error checking the branch tag.';
+    const successDescription = 'This branch has been tagged.';
+    const failureDescription = 'Unable to find a tag for this branch!';
+    const context = 'continuous-integration/harbormaster';
+
+    const options = {
       data: {
-        'state': error_state,
-        'target_url': target_url,
-        'description': error_description,
-        'context': context
+        state: errorState,
+        targetUrl,
+        description: errorDescription,
+        context,
       },
       headers: {
-        'User-Agent': user_agent,
-        'Content-Type': content_type,
-        'Authorization': `token ${github_token}`
-      }
+        'User-Agent': userAgent,
+        'Content-Type': contentType,
+        Authorization: `token ${githubToken}`,
+      },
     };
 
-    exec(clone_command, { cwd: tmp });
-    exec(checkout_command, { cwd: repo_path });
+    exec(cloneCommand, { cwd: tmp });
+    exec(checkoutCommand, { cwd: repoPath });
 
     try {
-      results = exec(check_tag_command, { cwd: repo_path, encoding: 'utf8' });
-      console.log('Tag found.  Sending success status.');
-      options.data.state = success_state;
-      options.data.description = success_description;
-      exit_code = 0;
-      manifest.data = results;
+      results = exec(checkTagCommand, { cwd: repoPath, encoding: 'utf8' });
+      log('Tag found.  Sending success status.');
+      options.data.state = successState;
+      options.data.description = successDescription;
+      exitCode = 0;
+      newManifest.data = results;
     } catch (err) {
-      console.log('No tag found.  Sending failure status.');
-      options.data.state = failure_state;
-      options.data.description = failure_description;
-      exit_code = 2;
-      manifest.error = err;
+      log('No tag found.  Sending failure status.');
+      options.data.state = failureState;
+      options.data.description = failureDescription;
+      exitCode = 2;
+      newManifest.error = err;
     }
 
-    $H.HTTP.post(status_url, options);
+    $H.HTTP.post(statusUrl, options);
 
-    exec(remove_command);
+    exec(removeCommand);
 
-    $H.call('Lanes#end_shipment', lane, exit_code, manifest);
+    $H.call('Lanes#end_shipment', lane, exitCode, newManifest);
 
-    return manifest;
-  }
-}
+    return newManifest;
+  },
+};
 
