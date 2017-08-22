@@ -60,7 +60,7 @@ module.exports = {
     const githubToken = process.env.GIThubTOKEN;
 
     const commitHash = manifest.prior_manifest.after;
-    const fullName = manifest.prior_manifest.repository.fullName;
+    const fullName = manifest.prior_manifest.repository.full_name;
     const shipmentDate = manifest.shipment_start_date;
     const repoProtocol = 'https://';
     const auth = githubUser ? `${githubUser}:${githubToken}@` : '';
