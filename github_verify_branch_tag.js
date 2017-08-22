@@ -56,8 +56,8 @@ module.exports = {
 
     const newManifest = manifest;
 
-    const githubUser = process.env.GIThubUSER;
-    const githubToken = process.env.GIThubTOKEN;
+    const githubUser = process.env.GITHUB_USER;
+    const githubToken = process.env.GITHUB_TOKEN;
 
     const commitHash = manifest.prior_manifest.after;
     const fullName = manifest.prior_manifest.repository.full_name;
