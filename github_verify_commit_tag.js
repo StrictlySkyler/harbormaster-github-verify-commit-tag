@@ -3,7 +3,7 @@
 
 'use strict';
 
-const NAME = 'github_verify_branch_tag';
+const NAME = 'github_verify_commit_tag';
 const dependencies = ['uuid', 'expand-tilde', 'debug'].join(' ');
 
 require('child_process').execSync(`npm i ${dependencies}`);
@@ -75,7 +75,7 @@ module.exports = {
     const removeCommand = `rm -rf ${repoPath}`;
 
     const contentType = 'application/json';
-    const userAgent = 'GitHub Verify Branch Tag Service';
+    const userAgent = 'GitHub Verify Commit Tag Service';
     const statusUrl =
       `https://api.github.com/repos/${fullName}/statuses/${commitHash}`;
     const errorState = 'error';
@@ -83,10 +83,10 @@ module.exports = {
     const failureState = 'failure';
     const targetUrl =
       `${process.env.ROOT_URL}/${lane.name}/ship/${shipmentDate}`;
-    const errorDescription = 'There was an error checking the branch tag.';
-    const successDescription = 'This branch has been tagged.';
-    const failureDescription = 'Unable to find a tag for this branch!';
-    const context = 'continuous-integration/harbormaster';
+    const errorDescription = 'There was an error checking the commit tag.';
+    const successDescription = 'This commit has been tagged.';
+    const failureDescription = 'Unable to find a tag for this commit!';
+    const context = 'CI/harbormaster/commit-is-tagged';
 
     const options = {
       data: {
