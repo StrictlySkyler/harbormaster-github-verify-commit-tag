@@ -1,0 +1,27 @@
+{
+  "name": "harbormaster-github-verify-branch-tag",
+  "version": "1.0.0",
+  "description": "Verify that your branches are tagged before merging into a shared branch.",
+  "main": "github_verify_branch_tag.js",
+  "dependencies": {
+    "debug": "~3.1.0",
+    "es6-promise": "~4.1.1",
+    "expand-tilde": "~2.0.2",
+    "isomorphic-fetch": "~2.2.1",
+    "uuid": "~3.1.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/getprodigy/harbormaster-github-verify-branch-tag.git"
+  },
+  "author": "Skyler Brungardt <skyler@getprodigy.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/getprodigy/harbormaster-github-verify-branch-tag/issues"
+  },
+  "homepage": "https://github.com/getprodigy/harbormaster-github-verify-branch-tag#readme"
+}
